@@ -15,7 +15,8 @@ import {
 import {
   handleGenerateAuthUrl,
   handleExchangeToken,
-  handleTokenStatus
+  handleTokenStatus,
+  refreshAccessToken
 } from './auth.js';
 import { handleMessages } from './api.js';
 
@@ -57,5 +58,23 @@ export default {
       logError('Worker错误', error);
       return createErrorResponse(ERROR_CODES.SYSTEM_INTERNAL_ERROR, `服务器内部错误: ${error.message}`, 500);
     }
+  },
+
+  async scheduled(controller, env, ctx) {
+    console.log('定时任务开始执行 - Claude Token 自动刷新');
+    
+    try {
+      const result = await refreshAccessToken(env);
+      
+      if (result.success) {
+        console.log(`令牌刷新成功 - 新的过期时间: ${new Date(result.expiresAt).toISOString()}`);
+      } else {
+        console.error(`令牌刷新失败: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('定时任务执行错误:', error);
+    }
+    
+    console.log('定时任务执行完成');
   }
 };

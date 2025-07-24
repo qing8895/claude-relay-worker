@@ -153,3 +153,68 @@ export async function handleTokenStatus(env) {
     return createErrorResponse(ERROR_CODES.AUTH_CHECK_STATUS_FAILED, `检查令牌状态失败: ${error.message}`, 500);
   }
 }
+
+/**
+ * 使用 refresh token 刷新访问令牌
+ * @param {Object} env - 环境变量
+ * @returns {Promise<Object>} 刷新结果
+ */
+export async function refreshAccessToken(env) {
+  try {
+    // 从 KV 获取当前存储的令牌信息
+    const tokenData = await env.CLAUDE_KV.get('claude_token');
+    if (!tokenData) {
+      throw new Error('未找到存储的令牌信息');
+    }
+
+    const currentToken = JSON.parse(tokenData);
+    if (!currentToken.refresh_token) {
+      throw new Error('未找到 refresh_token');
+    }
+
+    console.log('开始刷新令牌...');
+
+    // 调用 refresh token 接口
+    const refreshResponse = await fetch(OAUTH_CONFIG.TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'claude-cli/1.0.56 (external, cli)',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://claude.ai/',
+        'Origin': 'https://claude.ai'
+      },
+      body: JSON.stringify({
+        grant_type: 'refresh_token',
+        refresh_token: currentToken.refresh_token,
+        client_id: OAUTH_CONFIG.CLIENT_ID
+      })
+    });
+
+    if (!refreshResponse.ok) {
+      const errorText = await refreshResponse.text();
+      throw new Error(`刷新令牌失败: ${refreshResponse.status} ${errorText}`);
+    }
+
+    const newTokenData = await refreshResponse.json();
+    console.log('令牌刷新成功');
+
+    // 创建新的令牌信息并保存到 KV
+    const newTokenInfo = createTokenInfo(newTokenData);
+    await env.CLAUDE_KV.put('claude_token', JSON.stringify(newTokenInfo));
+
+    return {
+      success: true,
+      message: SUCCESS_MESSAGES.AUTH_TOKEN_REFRESHED,
+      expiresAt: newTokenInfo.expires_at
+    };
+
+  } catch (error) {
+    logError('刷新令牌错误', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}

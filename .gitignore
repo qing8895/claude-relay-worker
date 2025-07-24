@@ -4,6 +4,9 @@ wrangler.toml
 # IDE
 .idea
 
+# Claude
+.claude
+
 # Cloudflare
 .wrangler
 

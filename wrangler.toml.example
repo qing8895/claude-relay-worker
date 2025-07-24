@@ -12,3 +12,12 @@ binding = "CLAUDE_KV"
 # 请替换为你的 KV 命名空间 ID
 # 在 Workers & Pages → KV 中创建命名空间后获取
 id = "your-kv-namespace-id"
+
+[triggers]
+crons = ["0 */6 * * *"]
+
+[observability.logs]
+enabled = true
+
+
+
