@@ -11,7 +11,7 @@ account_id = "1ace686be8b4c742bd9c4d0b59646fc8"
 binding = "CLAUDE_KV"
 # 请替换为你的 KV 命名空间 ID
 # 在 Workers & Pages → KV 中创建命名空间后获取
-id = "claude-relay-worker"
+id = "fea14bfdaef441008184826fc948aea5"
 
 [triggers]
 crons = ["0 */6 * * *"]
